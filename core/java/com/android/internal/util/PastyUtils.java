@@ -18,6 +18,7 @@ package com.android.internal.util;
 
 import android.os.Handler;
 import android.os.HandlerThread;
+import android.util.Log;
 import android.util.JsonReader;
 
 import java.io.InputStreamReader;
@@ -32,7 +33,7 @@ import javax.net.ssl.HttpsURLConnection;
 public final class PastyUtils {
     private static final String TAG = "PastyUtils";
     private static final String BASE_URL = "https://paste.crdroid.net";
-    private static final String API_URL = String.format("%s/documents", BASE_URL);
+    private static final String API_URL = String.format("%s/api/v1/pastes", BASE_URL);
     private static Handler handler;
 
     private PastyUtils() {
@@ -51,11 +52,15 @@ public final class PastyUtils {
                 try {
                     HttpsURLConnection urlConnection = (HttpsURLConnection) new URL(API_URL).openConnection();
                     try {
-                        urlConnection.setRequestProperty("Accept-Charset", "UTF-8");
                         urlConnection.setDoOutput(true);
+                        urlConnection.setRequestMethod("POST");
+                        urlConnection.setRequestProperty("Content-Type", "application/json");
+                        urlConnection.setRequestProperty("Accept", "application/json");
 
+                        String datajson = "{\"content\": \"" + content + "\"}";
+                        Log.e("pasty","json:" + datajson);
                         try (OutputStream output = urlConnection.getOutputStream()) {
-                            output.write(content.getBytes("UTF-8"));
+                            output.write(datajson.getBytes("UTF-8"));
                         }
                         String key = "";
                         try (JsonReader reader = new JsonReader(
@@ -63,7 +68,7 @@ public final class PastyUtils {
                             reader.beginObject();
                             while (reader.hasNext()) {
                                 String name = reader.nextName();
-                                if (name.equals("key")) {
+                                if (name.equals("id")) {
                                     key = reader.nextString();
                                     break;
                                 } else {
